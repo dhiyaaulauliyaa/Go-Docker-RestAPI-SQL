@@ -1,0 +1,25 @@
+version: "3"
+
+networks:
+  main-network:
+
+
+services:
+  db:
+    container_name: kajian-kalamtv-db
+    image: postgres:14.4-alpine
+    restart: always
+    networks:
+      - main-network
+    ports:
+      - '5432:5432'
+    volumes:
+      - db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=kajian
+
+volumes:
+  db:
+    driver: local
