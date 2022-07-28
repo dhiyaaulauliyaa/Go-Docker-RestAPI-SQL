@@ -1,0 +1,11 @@
+DROP TABLE IF EXISTS user_events;
+DROP TABLE IF EXISTS user_favorited_events;
+DROP TABLE IF EXISTS user_favorited_masjids;
+DROP TABLE IF EXISTS user_favorited_ustadz;
+DROP TABLE IF EXISTS events_asatidz;
+DROP TABLE IF EXISTS contacts;
+DROP TABLE IF EXISTS events;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS masjids;
+DROP TABLE IF EXISTS asatidz;
+DROP TYPE contact_types;
