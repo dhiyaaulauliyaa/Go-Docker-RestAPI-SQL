@@ -19,7 +19,7 @@ type UserResponse struct {
 	Avatar   null.String `json:"avatar"`
 }
 
-func generateUserResponse(user User) UserResponse {
+func GenerateUserResponse(user User) UserResponse {
 	return UserResponse{
 		ID:       user.ID,
 		Username: user.Username,
@@ -58,7 +58,7 @@ func (store *Store) CreateUserTx(ctx context.Context, arg CreateUserTxParams) (C
 			return err
 		}
 
-		result.User = generateUserResponse(user)
+		result.User = GenerateUserResponse(user)
 		return nil
 	})
 
@@ -73,17 +73,17 @@ type GetUserTxResult struct {
 	User    UserResponse `json:"data"`
 }
 
-func (store *Store) GetUserTx(ctx context.Context, id int32) (GetUserTxResult, error) {
+func (store *Store) GetUserTx(ctx context.Context, phone string) (GetUserTxResult, error) {
 	var result GetUserTxResult
 
 	/* Get User */
 	err := store.execTx(ctx, func(q *Queries) error {
-		user, err := q.GetUser(ctx, id)
+		user, err := q.GetUser(ctx, phone)
 		if err != nil {
 			return err
 		}
 
-		result.User = generateUserResponse(user)
+		result.User = GenerateUserResponse(user)
 		return nil
 	})
 
@@ -110,7 +110,7 @@ func (store *Store) GetUsersTx(ctx context.Context) (ListUsersTxResult, error) {
 
 		var usersRes []UserResponse
 		for _, user := range users {
-			usersRes = append(usersRes, generateUserResponse(user))
+			usersRes = append(usersRes, GenerateUserResponse(user))
 		}
 
 		result.User = usersRes
@@ -149,7 +149,7 @@ func (store *Store) UpdateUserTx(ctx context.Context, arg UpdateUserTxParams) (U
 			return err
 		}
 
-		result.User = generateUserResponse(user)
+		result.User = GenerateUserResponse(user)
 		return nil
 	})
 
@@ -165,23 +165,8 @@ type DeleteUserTxResult struct {
 
 func (store *Store) DeleteUserTx(ctx context.Context, id int32) (DeleteUserTxResult, error) {
 	var result DeleteUserTxResult
-	var err error
 
-	/* Check if data exist */
-	err = store.execTx(ctx, func(q *Queries) error {
-		_, err := q.GetUser(ctx, id)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	})
-	if err != nil {
-		return result, err
-	}
-
-	/* Start delete data */
-	err = store.execTx(ctx, func(q *Queries) error {
+	err := store.execTx(ctx, func(q *Queries) error {
 		err := q.DeleteUser(ctx, id)
 		if err != nil {
 			return err

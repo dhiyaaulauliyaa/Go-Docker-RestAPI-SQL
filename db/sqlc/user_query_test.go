@@ -13,7 +13,7 @@ func createRandomUser(t *testing.T) User {
 	arg := CreateUserParams{
 		Username: util.RandomUsername(),
 		Name:     util.RandomName(),
-		Password: util.RandomString(10),
+		Password: "secret",
 		Phone:    util.RandomPhone(),
 		Gender:   int32(util.RandomGender()),
 		Age:      int32(util.RandomAge()),
@@ -46,9 +46,9 @@ func TestCreateUser(t *testing.T) {
 	arg := CreateUserParams{
 		Username: util.RandomUsername(),
 		Name:     "Test Create User",
-		Password: util.RandomString(10),
+		Password: "secret",
 		Phone:    util.RandomPhone(),
-		Gender:   int32(util.RandomAge()),
+		Gender:   int32(util.RandomGender()),
 		Age:      int32(util.RandomAge()),
 		Avatar:   sql.NullString{},
 	}
@@ -76,7 +76,7 @@ func TestCreateUser(t *testing.T) {
 func TestGetUser(t *testing.T) {
 	testUser := createRandomUser(t)
 
-	user, err := testQueries.GetUser(context.Background(), testUser.ID)
+	user, err := testQueries.GetUser(context.Background(), testUser.Phone)
 	require.NoError(t, err)
 	require.NotEmpty(t, user)
 

@@ -3,6 +3,7 @@ package api
 import (
 	"database/sql"
 	"net/http"
+	"time"
 
 	db "github.com/dhiyaaulauliyaa/learn-go/db/sqlc"
 	util "github.com/dhiyaaulauliyaa/learn-go/utils"
@@ -80,7 +81,7 @@ func (server *Server) createUser(ctx *gin.Context) {
 }
 
 type getUserRequest struct {
-	ID int32 `uri:"id" binding:"required"`
+	Phone string `uri:"phone" binding:"required"`
 }
 
 func (server *Server) getUser(ctx *gin.Context) {
@@ -90,7 +91,7 @@ func (server *Server) getUser(ctx *gin.Context) {
 		return
 	}
 
-	res, err := server.store.GetUserTx(ctx, req.ID)
+	res, err := server.store.GetUserTx(ctx, req.Phone)
 	if err != nil {
 		message, code := userErrHandling(err, "Get user failed")
 		ctx.JSON(code, errorResponse(err, message))
@@ -170,4 +171,58 @@ func (server *Server) deleteUser(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, res)
+}
+
+type userLoginRequest struct {
+	Phone    string `json:"phone" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
+
+type userLoginResponse struct {
+	Message     string          `json:"message"`
+	AccessToken string          `json:"access_token"`
+	User        db.UserResponse `json:"user"`
+}
+
+func (server *Server) userLogin(ctx *gin.Context) {
+	var req userLoginRequest
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err, errorBindBody))
+		return
+	}
+
+	/* Get User */
+	user, err := server.store.GetUser(ctx, req.Phone)
+	if err != nil {
+		message, code := userErrHandling(err, "Delete user failed")
+		ctx.JSON(code, errorResponse(err, message))
+		return
+	}
+
+	/* Check Password */
+	err = util.CheckPassword(req.Password, user.Password)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, errorResponse(err, "Password incorrect"))
+		return
+	}
+
+	/* Generate Access Token */
+	accessToken, payload, err := server.tokenMaker.CreateToken(
+		user.Username, time.Duration(60*15*1000000000),
+	)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err, "Create token failed"))
+		return
+	}
+	if payload == nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err, "Create token failed"))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, userLoginResponse{
+		Message:     "Login Success",
+		AccessToken: accessToken,
+		User:        db.GenerateUserResponse(user),
+	})
 }

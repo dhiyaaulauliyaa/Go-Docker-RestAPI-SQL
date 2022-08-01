@@ -4,7 +4,7 @@ SELECT
 FROM
   users
 WHERE
-  id = $1;
+  phone = $1;
 
 
 -- name: ListUsers :many

@@ -21,7 +21,10 @@ func main() {
 		log.Fatal("Error when connecting to databse: ", err)
 	}
 
-	server := api.NewServer(db.NewStore(conn))
+	server, err := api.NewServer(db.NewStore(conn))
+	if err != nil {
+		log.Fatal("Error when creating server: ", err)
+	}
 
 	err = server.Start(serverAddress)
 	if err != nil {

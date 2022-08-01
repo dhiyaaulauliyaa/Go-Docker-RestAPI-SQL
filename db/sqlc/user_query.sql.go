@@ -114,11 +114,11 @@ SELECT
 FROM
   users
 WHERE
-  id = $1
+  phone = $1
 `
 
-func (q *Queries) GetUser(ctx context.Context, id int32) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUser, id)
+func (q *Queries) GetUser(ctx context.Context, phone string) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUser, phone)
 	var i User
 	err := row.Scan(
 		&i.ID,
