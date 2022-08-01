@@ -26,3 +26,22 @@ func NullableToInt32(data null.Int) sql.NullInt32 {
 		Valid: data.Valid,
 	}
 }
+
+func StringToNullable(data sql.NullString) null.String {
+	var result null.String
+	if data.Valid {
+		result = null.NewString(
+			data.String,
+			data.Valid,
+		)
+	}
+
+	return result
+}
+
+func NullableToString(data null.String) sql.NullString {
+	return sql.NullString{
+		String: data.String,
+		Valid:  data.Valid,
+	}
+}
