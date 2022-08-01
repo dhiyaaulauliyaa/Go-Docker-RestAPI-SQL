@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	db "github.com/dhiyaaulauliyaa/learn-go/db/sqlc"
-	nullable "github.com/dhiyaaulauliyaa/learn-go/utils"
+	util "github.com/dhiyaaulauliyaa/learn-go/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
 	"gopkg.in/guregu/null.v4"
@@ -34,11 +34,11 @@ func userErrHandling(err error, defaultMsg string) (string, int) {
 }
 
 type createUserRequest struct {
-	Username string      `json:"username" binding:"required"`
+	Username string      `json:"username" binding:"required,alphanum"`
 	Name     string      `json:"name" binding:"required"`
 	Password string      `json:"password" binding:"required"`
 	Phone    string      `json:"phone" binding:"required"`
-	Email    null.String `json:"email" binding:"email"`
+	Email    null.String `json:"email" binding:"required,email"`
 	Gender   int32       `json:"gender" binding:"required"`
 	Age      int32       `json:"age" binding:"required"`
 	Avatar   null.String `json:"avatar"`
@@ -51,15 +51,22 @@ func (server *Server) createUser(ctx *gin.Context) {
 		return
 	}
 
+	/* Hash password */
+	hashedPass, err := util.HashPassword(req.Password)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err, errorHashPass))
+		return
+	}
+
 	arg := db.CreateUserTxParams{
 		Username: req.Username,
 		Name:     req.Name,
-		Password: req.Password,
+		Password: hashedPass,
 		Phone:    req.Phone,
-		Email:    nullable.NullableToString(req.Email),
+		Email:    util.NullableToString(req.Email),
 		Gender:   req.Gender,
 		Age:      req.Age,
-		Avatar:   nullable.NullableToString(req.Avatar),
+		Avatar:   util.NullableToString(req.Avatar),
 	}
 
 	res, err := server.store.CreateUserTx(ctx, arg)
@@ -128,10 +135,10 @@ func (server *Server) updateUser(ctx *gin.Context) {
 		Username: req.Username,
 		Name:     req.Name,
 		Phone:    req.Phone,
-		Email:    nullable.NullableToString(req.Email),
+		Email:    util.NullableToString(req.Email),
 		Gender:   req.Gender,
 		Age:      req.Age,
-		Avatar:   nullable.NullableToString(req.Avatar),
+		Avatar:   util.NullableToString(req.Avatar),
 	}
 
 	res, err := server.store.UpdateUserTx(ctx, arg)

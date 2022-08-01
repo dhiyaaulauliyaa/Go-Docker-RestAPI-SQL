@@ -6,8 +6,9 @@ import (
 )
 
 const (
-	errorBindUri  = "Fail to parse id"
-	errorBindBody = "Fail to parse body"
+	errorBindUri  = "Param parsing failed"
+	errorBindBody = "Body parsing failed"
+	errorHashPass = "Password hashing failed"
 )
 
 type Server struct {

@@ -19,7 +19,7 @@ func randomInt(min, max int64) int64 {
 	return min + rand.Int63n(max-min+1)
 }
 
-func randomString(n int) string {
+func RandomString(n int) string {
 	var sb strings.Builder
 	k := len(alphabet)
 
@@ -44,14 +44,14 @@ func randomNumber(n int) string {
 }
 
 func RandomName() string {
-	return randomString(6)
+	return RandomString(6)
 }
 
 func RandomUsername() string {
 	var sb strings.Builder
 
 	sb.WriteString("@")
-	sb.WriteString(randomString(8))
+	sb.WriteString(RandomString(8))
 
 	return sb.String()
 }

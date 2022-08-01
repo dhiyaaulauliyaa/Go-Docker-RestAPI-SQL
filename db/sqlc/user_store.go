@@ -3,37 +3,32 @@ package db
 import (
 	"context"
 	"database/sql"
-	"time"
 
 	util "github.com/dhiyaaulauliyaa/learn-go/utils"
 	"gopkg.in/guregu/null.v4"
 )
 
 type UserResponse struct {
-	ID        int32       `json:"id"`
-	Username  string      `json:"username"`
-	Password  string      `json:"password"`
-	Name      string      `json:"name"`
-	Phone     string      `json:"phone"`
-	Email     null.String `json:"email"`
-	Gender    int32       `json:"gender"`
-	Age       int32       `json:"age"`
-	Avatar    null.String `json:"avatar"`
-	CreatedAt time.Time   `json:"createdAt"`
+	ID       int32       `json:"id"`
+	Username string      `json:"username"`
+	Name     string      `json:"name"`
+	Phone    string      `json:"phone"`
+	Email    null.String `json:"email"`
+	Gender   int32       `json:"gender"`
+	Age      int32       `json:"age"`
+	Avatar   null.String `json:"avatar"`
 }
 
 func generateUserResponse(user User) UserResponse {
 	return UserResponse{
-		ID:        user.ID,
-		Username:  user.Username,
-		Password:  user.Password,
-		Name:      user.Name,
-		Phone:     user.Phone,
-		Email:     util.StringToNullable(user.Email),
-		Gender:    user.Gender,
-		Age:       user.Age,
-		Avatar:    util.StringToNullable(user.Avatar),
-		CreatedAt: user.CreatedAt,
+		ID:       user.ID,
+		Username: user.Username,
+		Name:     user.Name,
+		Phone:    user.Phone,
+		Email:    util.StringToNullable(user.Email),
+		Gender:   user.Gender,
+		Age:      user.Age,
+		Avatar:   util.StringToNullable(user.Avatar),
 	}
 }
 

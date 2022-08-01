@@ -13,12 +13,16 @@ func createRandomUser(t *testing.T) User {
 	arg := CreateUserParams{
 		Username: util.RandomUsername(),
 		Name:     util.RandomName(),
-		Password: "secret",
+		Password: util.RandomString(10),
 		Phone:    util.RandomPhone(),
 		Gender:   int32(util.RandomGender()),
 		Age:      int32(util.RandomAge()),
 		Avatar:   sql.NullString{},
 	}
+
+	hashedPass, err := util.HashPassword(arg.Password)
+	require.NoError(t, err)
+	arg.Password = hashedPass
 
 	user, err := testQueries.CreateUser(context.Background(), arg)
 	require.NoError(t, err)
@@ -41,13 +45,17 @@ func createRandomUser(t *testing.T) User {
 func TestCreateUser(t *testing.T) {
 	arg := CreateUserParams{
 		Username: util.RandomUsername(),
-		Name:     "Test User",
-		Password: "secret",
+		Name:     "Test Create User",
+		Password: util.RandomString(10),
 		Phone:    util.RandomPhone(),
-		Gender:   1,
-		Age:      30,
+		Gender:   int32(util.RandomAge()),
+		Age:      int32(util.RandomAge()),
 		Avatar:   sql.NullString{},
 	}
+
+	hashedPass, err := util.HashPassword(arg.Password)
+	require.NoError(t, err)
+	arg.Password = hashedPass
 
 	user, err := testQueries.CreateUser(context.Background(), arg)
 	require.NoError(t, err)
