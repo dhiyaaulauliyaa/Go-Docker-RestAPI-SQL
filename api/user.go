@@ -9,6 +9,7 @@ import (
 	db "github.com/dhiyaaulauliyaa/learn-go/db/sqlc"
 	util "github.com/dhiyaaulauliyaa/learn-go/utils"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"gopkg.in/guregu/null.v4"
 )
@@ -198,9 +199,13 @@ type userLoginRequest struct {
 }
 
 type userLoginResponse struct {
-	Message     string          `json:"message"`
-	AccessToken string          `json:"access_token"`
-	User        db.UserResponse `json:"user"`
+	SessionID           uuid.UUID       `json:"session_id"`
+	Message             string          `json:"message"`
+	AccessToken         string          `json:"access_token"`
+	RefreshToken        string          `json:"refresh_token"`
+	AccessTokenExpDate  time.Time       `json:"access_token_exp_date"`
+	RefreshTokenExpDate time.Time       `json:"refresh_token_exp_date"`
+	User                db.UserResponse `json:"user"`
 }
 
 func (server *Server) userLogin(ctx *gin.Context) {
@@ -227,23 +232,57 @@ func (server *Server) userLogin(ctx *gin.Context) {
 	}
 
 	/* Generate Access Token */
-	accessToken, payload, err := server.tokenMaker.CreateToken(
-		user.Phone, time.Duration(60*15*1000000000),
+	accessToken, accessPayload, err := server.tokenMaker.CreateToken(
+		user.Phone,
+		time.Duration(15*60*1000000000),
 	)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err, "Create token failed"))
 		return
 	}
-	if payload == nil {
+	if accessPayload == nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err, "Create token failed"))
 		return
 	}
 
-	log.Println(payload.Identifier)
+	/* Generate Refresh Token */
+	refreshToken, refreshPayload, err := server.tokenMaker.CreateToken(
+		user.Phone,
+		time.Duration(30*24*60*60*1000000000),
+	)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err, "Create token failed"))
+		return
+	}
+	if refreshPayload == nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err, "Create token failed"))
+		return
+	}
+
+	log.Println(refreshPayload.Identifier)
+
+	/* Store User Session */
+	session, err := server.store.CreateSession(ctx, db.CreateSessionParams{
+		ID:           refreshPayload.ID,
+		Phone:        user.Phone,
+		RefreshToken: refreshToken,
+		UserAgent:    ctx.Request.UserAgent(),
+		ClientIp:     ctx.ClientIP(),
+		IsBlocked:    false,
+		ExpiresAt:    refreshPayload.ExpiredAt,
+	})
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err, "Create session error"))
+		return
+	}
 
 	ctx.JSON(http.StatusOK, userLoginResponse{
-		Message:     "Login Success",
-		AccessToken: accessToken,
-		User:        db.GenerateUserResponse(user),
+		SessionID:           session.ID,
+		Message:             "Login Success",
+		AccessToken:         accessToken,
+		RefreshToken:        refreshToken,
+		AccessTokenExpDate:  accessPayload.ExpiredAt,
+		RefreshTokenExpDate: refreshPayload.ExpiredAt,
+		User:                db.GenerateUserResponse(user),
 	})
 }

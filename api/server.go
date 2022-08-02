@@ -44,11 +44,7 @@ func (server *Server) initRouter() {
 
 	authRoutes := router.Group("/").Use(authMiddleware(server.tokenMaker))
 
-	router.POST("/event", server.createEvent)
-	router.GET("/events", server.getEvents)
-	router.GET("/event/:id", server.getEvent)
-	authRoutes.PUT("/event", server.updateEvent)
-	authRoutes.DELETE("/event/:id", server.deleteEvent)
+	router.POST("/auth/refresh_token", server.refreshToken)
 
 	router.POST("/user/login", server.userLogin)
 	router.POST("/user", server.createUser)
@@ -56,6 +52,12 @@ func (server *Server) initRouter() {
 	authRoutes.GET("/user/:phone", server.getUser)
 	authRoutes.PUT("/user", server.updateUser)
 	authRoutes.DELETE("/user/:id", server.deleteUser)
+
+	router.POST("/event", server.createEvent)
+	router.GET("/events", server.getEvents)
+	router.GET("/event/:id", server.getEvent)
+	authRoutes.PUT("/event", server.updateEvent)
+	authRoutes.DELETE("/event/:id", server.deleteEvent)
 
 	server.router = router
 }
