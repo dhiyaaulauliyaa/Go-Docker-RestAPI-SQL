@@ -2,6 +2,7 @@ package api
 
 import (
 	"database/sql"
+	"log"
 	"net/http"
 	"time"
 
@@ -85,16 +86,25 @@ type getUserRequest struct {
 }
 
 func (server *Server) getUser(ctx *gin.Context) {
+	/* Parse URI to get ID */
 	var req getUserRequest
 	if err := ctx.ShouldBindUri(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err, errorBindUri))
 		return
 	}
 
+	/* Start get User */
 	res, err := server.store.GetUserTx(ctx, req.Phone)
 	if err != nil {
 		message, code := userErrHandling(err, "Get user failed")
 		ctx.JSON(code, errorResponse(err, message))
+		return
+	}
+
+	/* Check auth */
+	err = server.checkAuthOwnership(ctx, res.User.Phone)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, errorResponse(err, err.Error()))
 		return
 	}
 
@@ -131,6 +141,14 @@ func (server *Server) updateUser(ctx *gin.Context) {
 		return
 	}
 
+	/* Check auth */
+	err := server.checkAuthOwnership(ctx, req.Phone)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, errorResponse(err, err.Error()))
+		return
+	}
+
+	/* Process args */
 	arg := db.UpdateUserTxParams{
 		ID:       req.ID,
 		Username: req.Username,
@@ -142,6 +160,7 @@ func (server *Server) updateUser(ctx *gin.Context) {
 		Avatar:   util.NullableToString(req.Avatar),
 	}
 
+	/* Start Update */
 	res, err := server.store.UpdateUserTx(ctx, arg)
 	if err != nil {
 		message, code := userErrHandling(err, "Update user failed")
@@ -209,7 +228,7 @@ func (server *Server) userLogin(ctx *gin.Context) {
 
 	/* Generate Access Token */
 	accessToken, payload, err := server.tokenMaker.CreateToken(
-		user.Username, time.Duration(60*15*1000000000),
+		user.Phone, time.Duration(60*15*1000000000),
 	)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err, "Create token failed"))
@@ -219,6 +238,8 @@ func (server *Server) userLogin(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err, "Create token failed"))
 		return
 	}
+
+	log.Println(payload.Identifier)
 
 	ctx.JSON(http.StatusOK, userLoginResponse{
 		Message:     "Login Success",
