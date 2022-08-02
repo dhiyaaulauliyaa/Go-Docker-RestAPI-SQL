@@ -8,6 +8,8 @@ import (
 	"database/sql"
 	"fmt"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type ContactTypes string
@@ -83,6 +85,17 @@ type Masjid struct {
 	Phone      sql.NullString `json:"phone"`
 	Logo       sql.NullString `json:"logo"`
 	CreatedAt  time.Time      `json:"createdAt"`
+}
+
+type Session struct {
+	ID           uuid.UUID `json:"id"`
+	Phone        string    `json:"phone"`
+	RefreshToken string    `json:"refreshToken"`
+	UserAgent    string    `json:"userAgent"`
+	ClientIp     string    `json:"clientIp"`
+	IsBlocked    bool      `json:"isBlocked"`
+	ExpiresAt    time.Time `json:"expiresAt"`
+	CreatedAt    time.Time `json:"createdAt"`
 }
 
 type User struct {
