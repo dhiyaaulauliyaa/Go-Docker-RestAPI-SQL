@@ -18,3 +18,6 @@ test:
 
 sqlc:
 	sqlc generate
+
+mock:
+	mockgen -package mockdb -destination db/mock/store.go github.com/dhiyaaulauliyaa/learn-go/db/sqlc Store
