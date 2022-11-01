@@ -61,7 +61,7 @@ func (server *Server) createUser(ctx *gin.Context) {
 		return
 	}
 
-	arg := db.CreateUserTxParams{
+	arg := db.CreateUserParams{
 		Username: req.Username,
 		Name:     req.Name,
 		Password: hashedPass,
@@ -72,14 +72,14 @@ func (server *Server) createUser(ctx *gin.Context) {
 		Avatar:   util.NullableToString(req.Avatar),
 	}
 
-	res, err := server.store.CreateUserTx(ctx, arg)
+	res, err := server.store.CreateUser(ctx, arg)
 	if err != nil {
 		message, code := userErrHandling(err, "Create user failed")
 		ctx.JSON(code, errorResponse(err, message))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, res)
+	ctx.JSON(http.StatusOK, successResponse(res))
 }
 
 type getUserRequest struct {
@@ -95,7 +95,7 @@ func (server *Server) getUser(ctx *gin.Context) {
 	}
 
 	/* Start get User */
-	res, err := server.store.GetUserTx(ctx, req.Phone)
+	res, err := server.store.GetUser(ctx, req.Phone)
 	if err != nil {
 		message, code := userErrHandling(err, "Get user failed")
 		ctx.JSON(code, errorResponse(err, message))
@@ -103,24 +103,24 @@ func (server *Server) getUser(ctx *gin.Context) {
 	}
 
 	/* Check auth */
-	err = server.checkAuthOwnership(ctx, res.User.Phone)
+	err = server.checkAuthOwnership(ctx, res.Phone)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, errorResponse(err, err.Error()))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, res)
+	ctx.JSON(http.StatusOK, successResponse(res))
 }
 
 func (server *Server) getUsers(ctx *gin.Context) {
-	res, err := server.store.GetUsersTx(ctx)
+	res, err := server.store.ListUsers(ctx)
 	if err != nil {
 		message, code := userErrHandling(err, "Get users failed")
 		ctx.JSON(code, errorResponse(err, message))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, res)
+	ctx.JSON(http.StatusOK, successResponse(res))
 }
 
 type updateUserRequest struct {
@@ -150,7 +150,7 @@ func (server *Server) updateUser(ctx *gin.Context) {
 	}
 
 	/* Process args */
-	arg := db.UpdateUserTxParams{
+	arg := db.UpdateUserParams{
 		ID:       req.ID,
 		Username: req.Username,
 		Name:     req.Name,
@@ -162,14 +162,14 @@ func (server *Server) updateUser(ctx *gin.Context) {
 	}
 
 	/* Start Update */
-	res, err := server.store.UpdateUserTx(ctx, arg)
+	res, err := server.store.UpdateUser(ctx, arg)
 	if err != nil {
 		message, code := userErrHandling(err, "Update user failed")
 		ctx.JSON(code, errorResponse(err, message))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, res)
+	ctx.JSON(http.StatusOK, successResponse(res))
 }
 
 type deleteUserRequest struct {
@@ -183,14 +183,14 @@ func (server *Server) deleteUser(ctx *gin.Context) {
 		return
 	}
 
-	res, err := server.store.DeleteUserTx(ctx, req.ID)
+	err := server.store.DeleteUser(ctx, req.ID)
 	if err != nil {
 		message, code := userErrHandling(err, "Delete user failed")
 		ctx.JSON(code, errorResponse(err, message))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, res)
+	ctx.JSON(http.StatusOK, successResponse(nil))
 }
 
 type userLoginRequest struct {
@@ -199,13 +199,13 @@ type userLoginRequest struct {
 }
 
 type userLoginResponse struct {
-	SessionID           uuid.UUID       `json:"session_id"`
-	Message             string          `json:"message"`
-	AccessToken         string          `json:"access_token"`
-	RefreshToken        string          `json:"refresh_token"`
-	AccessTokenExpDate  time.Time       `json:"access_token_exp_date"`
-	RefreshTokenExpDate time.Time       `json:"refresh_token_exp_date"`
-	User                db.UserResponse `json:"user"`
+	SessionID           uuid.UUID `json:"session_id"`
+	Message             string    `json:"message"`
+	AccessToken         string    `json:"access_token"`
+	RefreshToken        string    `json:"refresh_token"`
+	AccessTokenExpDate  time.Time `json:"access_token_exp_date"`
+	RefreshTokenExpDate time.Time `json:"refresh_token_exp_date"`
+	User                db.User   `json:"user"`
 }
 
 func (server *Server) userLogin(ctx *gin.Context) {
@@ -219,7 +219,7 @@ func (server *Server) userLogin(ctx *gin.Context) {
 	/* Get User */
 	user, err := server.store.GetUser(ctx, req.Phone)
 	if err != nil {
-		message, code := userErrHandling(err, "Delete user failed")
+		message, code := userErrHandling(err, "Get user failed")
 		ctx.JSON(code, errorResponse(err, message))
 		return
 	}
@@ -276,13 +276,14 @@ func (server *Server) userLogin(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, userLoginResponse{
+	var res = userLoginResponse{
 		SessionID:           session.ID,
-		Message:             "Login Success",
 		AccessToken:         accessToken,
 		RefreshToken:        refreshToken,
 		AccessTokenExpDate:  accessPayload.ExpiredAt,
 		RefreshTokenExpDate: refreshPayload.ExpiredAt,
-		User:                db.GenerateUserResponse(user),
-	})
+		User:                user,
+	}
+
+	ctx.JSON(http.StatusOK, successResponse(res))
 }

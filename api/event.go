@@ -13,10 +13,11 @@ import (
 )
 
 type createEventRequest struct {
-	Name   string    `json:"name" binding:"required"`
-	Venue  string    `json:"venue" binding:"required"`
-	Masjid null.Int  `json:"masjid"`
-	Date   time.Time `json:"date" binding:"required"`
+	Name      string    `json:"name" binding:"required"`
+	Venue     string    `json:"venue" binding:"required"`
+	Community null.Int  `json:"community"`
+	Masjid    null.Int  `json:"masjid"`
+	Date      time.Time `json:"date" binding:"required"`
 }
 
 func eventErrHandling(err error, defaultMsg string) (string, int) {
@@ -44,21 +45,21 @@ func (server *Server) createEvent(ctx *gin.Context) {
 		return
 	}
 
-	arg := db.CreateEventTxParams{
+	arg := db.CreateEventParams{
 		Name:   req.Name,
 		Venue:  req.Venue,
 		Masjid: nullable.NullableToInt32(req.Masjid),
 		Date:   req.Date,
 	}
 
-	res, err := server.store.CreateEventTx(ctx, arg)
+	res, err := server.store.CreateEvent(ctx, arg)
 	if err != nil {
 		message, code := eventErrHandling(err, "Create event failed")
 		ctx.JSON(code, errorResponse(err, message))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, res)
+	ctx.JSON(http.StatusOK, successResponse(res))
 }
 
 type getEventRequest struct {
@@ -72,25 +73,25 @@ func (server *Server) getEvent(ctx *gin.Context) {
 		return
 	}
 
-	res, err := server.store.GetEventTx(ctx, req.ID)
+	res, err := server.store.GetEvent(ctx, req.ID)
 	if err != nil {
 		message, code := eventErrHandling(err, "Get event failed")
 		ctx.JSON(code, errorResponse(err, message))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, res)
+	ctx.JSON(http.StatusOK, successResponse(res))
 }
 
 func (server *Server) getEvents(ctx *gin.Context) {
-	res, err := server.store.GetEventsTx(ctx)
+	res, err := server.store.ListEvents(ctx)
 	if err != nil {
 		message, code := eventErrHandling(err, "Get events failed")
 		ctx.JSON(code, errorResponse(err, message))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, res)
+	ctx.JSON(http.StatusOK, successResponse(res))
 }
 
 type updateEventRequest struct {
@@ -109,7 +110,7 @@ func (server *Server) updateEvent(ctx *gin.Context) {
 		return
 	}
 
-	arg := db.UpdateEventTxParams{
+	arg := db.UpdateEventParams{
 		ID:     req.ID,
 		Name:   req.Name,
 		Venue:  req.Venue,
@@ -117,13 +118,13 @@ func (server *Server) updateEvent(ctx *gin.Context) {
 		Date:   req.Date,
 	}
 
-	res, err := server.store.UpdateEventTx(ctx, arg)
+	res, err := server.store.UpdateEvent(ctx, arg)
 	if err != nil {
 		message, code := eventErrHandling(err, "Update event failed")
 		ctx.JSON(code, errorResponse(err, message))
 		return
 	}
-	ctx.JSON(http.StatusOK, res)
+	ctx.JSON(http.StatusOK, successResponse(res))
 }
 
 type deleteEventRequest struct {
@@ -137,12 +138,12 @@ func (server *Server) deleteEvent(ctx *gin.Context) {
 		return
 	}
 
-	res, err := server.store.DeleteEventTx(ctx, req.ID)
+	err := server.store.DeleteEvent(ctx, req.ID)
 	if err != nil {
 		message, code := eventErrHandling(err, "Delete event failed")
 		ctx.JSON(code, errorResponse(err, message))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, res)
+	ctx.JSON(http.StatusOK, successResponse(nil))
 }

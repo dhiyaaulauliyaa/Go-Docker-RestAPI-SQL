@@ -65,10 +65,3 @@ func (server *Server) initRouter() {
 func (server *Server) Start(address string) error {
 	return server.router.Run(address)
 }
-
-func errorResponse(err error, message string) gin.H {
-	return gin.H{
-		"message": message,
-		"error":   err.Error(),
-	}
-}
