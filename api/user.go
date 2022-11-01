@@ -7,7 +7,7 @@ import (
 	"time"
 
 	db "github.com/dhiyaaulauliyaa/learn-go/db/sqlc"
-	util "github.com/dhiyaaulauliyaa/learn-go/utils"
+	util "github.com/dhiyaaulauliyaa/learn-go/util"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/lib/pq"

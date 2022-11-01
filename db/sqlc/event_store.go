@@ -5,8 +5,7 @@ import (
 	"database/sql"
 	"time"
 
-	util "github.com/dhiyaaulauliyaa/learn-go/utils"
-
+	util "github.com/dhiyaaulauliyaa/learn-go/util"
 	"gopkg.in/guregu/null.v4"
 )
 

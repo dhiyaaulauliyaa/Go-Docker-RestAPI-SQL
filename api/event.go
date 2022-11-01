@@ -6,7 +6,7 @@ import (
 	"time"
 
 	db "github.com/dhiyaaulauliyaa/learn-go/db/sqlc"
-	nullable "github.com/dhiyaaulauliyaa/learn-go/utils"
+	nullable "github.com/dhiyaaulauliyaa/learn-go/util"
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
 	"gopkg.in/guregu/null.v4"

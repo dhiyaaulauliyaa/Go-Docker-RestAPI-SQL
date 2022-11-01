@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	util "github.com/dhiyaaulauliyaa/learn-go/utils"
+	util "github.com/dhiyaaulauliyaa/learn-go/util"
 	"github.com/stretchr/testify/require"
 )
 
