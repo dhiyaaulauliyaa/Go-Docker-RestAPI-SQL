@@ -4,19 +4,23 @@ import (
 	"database/sql"
 )
 
-type Store struct {
-	*Queries
-	db *sql.DB
+type Store interface {
+	Querier
 }
 
-func NewStore(db *sql.DB) *Store {
-	return &Store{
+type SQLStore struct {
+	db *sql.DB
+	*Queries
+}
+
+func NewStore(db *sql.DB) Store {
+	return &SQLStore{
 		db:      db,
 		Queries: New(db),
 	}
 }
 
-// func (store *Store) execTx(ctx context.Context, fn func(*Queries) error) error {
+// func (store *SQLStore) execTx(ctx context.Context, fn func(*Queries) error) error {
 // 	tx, err := store.db.BeginTx(ctx, nil)
 // 	if err != nil {
 // 		return err

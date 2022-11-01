@@ -18,12 +18,12 @@ const (
 )
 
 type Server struct {
-	store      *db.Store
+	store      db.Store
 	router     *gin.Engine
 	tokenMaker token.Maker
 }
 
-func NewServer(store *db.Store) (*Server, error) {
+func NewServer(store db.Store) (*Server, error) {
 	tokenMaker, err := token.NewPasetoMaker(tokenSymmetricKey)
 	if err != nil {
 		return nil, fmt.Errorf("token maker creation failed: %w", err)
