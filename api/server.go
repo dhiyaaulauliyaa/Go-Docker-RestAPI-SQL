@@ -1,18 +1,22 @@
 package api
 
 import (
-	"database/sql"
-
+	db "github.com/dhiyaaulauliyaa/learn-go/db/sqlc"
 	"github.com/gin-gonic/gin"
 )
 
+const (
+	errorBindUri  = "Fail to parse id"
+	errorBindBody = "Fail to parse body"
+)
+
 type Server struct {
-	db     *sql.DB
+	store  *db.Store
 	router *gin.Engine
 }
 
-func NewServer(db *sql.DB) *Server {
-	server := &Server{db: db}
+func NewServer(store *db.Store) *Server {
+	server := &Server{store: store}
 	router := gin.Default()
 
 	router.GET("/event/:id", server.getEvent)
@@ -29,6 +33,9 @@ func (server *Server) Start(address string) error {
 	return server.router.Run(address)
 }
 
-func errorResponse(err error) gin.H {
-	return gin.H{"message": err.Error()}
+func errorResponse(err error, message string) gin.H {
+	return gin.H{
+		"message": message,
+		"error":   err.Error(),
+	}
 }

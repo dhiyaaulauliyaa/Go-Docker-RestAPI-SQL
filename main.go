@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/dhiyaaulauliyaa/learn-go/api"
+	db "github.com/dhiyaaulauliyaa/learn-go/db/sqlc"
 	_ "github.com/lib/pq"
 )
 
@@ -20,7 +21,7 @@ func main() {
 		log.Fatal("Error when connecting to databse: ", err)
 	}
 
-	server := api.NewServer(conn)
+	server := api.NewServer(db.NewStore(conn))
 
 	err = server.Start(serverAddress)
 	if err != nil {

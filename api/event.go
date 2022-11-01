@@ -2,43 +2,63 @@ package api
 
 import (
 	"database/sql"
-	"log"
 	"net/http"
 	"time"
 
 	db "github.com/dhiyaaulauliyaa/learn-go/db/sqlc"
+	nullable "github.com/dhiyaaulauliyaa/learn-go/utils"
 	"github.com/gin-gonic/gin"
+	"github.com/lib/pq"
+	"gopkg.in/guregu/null.v4"
 )
 
 type createEventRequest struct {
-	Name   string        `json:"name" binding:"required"`
-	Venue  string        `json:"venue" binding:"required"`
-	Masjid sql.NullInt32 `json:"masjid"`
-	Date   time.Time     `json:"date" binding:"required"`
+	Name   string    `json:"name" binding:"required"`
+	Venue  string    `json:"venue" binding:"required"`
+	Masjid null.Int  `json:"masjid"`
+	Date   time.Time `json:"date" binding:"required"`
+}
+
+func eventErrHandling(err error, defaultMsg string) (string, int) {
+	if err == sql.ErrNoRows {
+		return "Data not found", http.StatusNotFound
+	}
+
+	if pqErr, ok := err.(*pq.Error); ok {
+		switch pqErr.Code.Name() {
+		case "foreign_key_violation":
+			switch pqErr.Constraint {
+			case "events_masjid_fkey":
+				return "Masjid not found", http.StatusNotFound
+			}
+		}
+	}
+
+	return defaultMsg, http.StatusInternalServerError
 }
 
 func (server *Server) createEvent(ctx *gin.Context) {
 	var req createEventRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		ctx.JSON(http.StatusBadRequest, errorResponse(err, errorBindBody))
 		return
 	}
 
-	arg := db.CreateEventParams{
+	arg := db.CreateEventTxParams{
 		Name:   req.Name,
 		Venue:  req.Venue,
-		Masjid: req.Masjid,
+		Masjid: nullable.NullableToInt32(req.Masjid),
 		Date:   req.Date,
 	}
 
-	q := db.New(server.db)
-	events, err := q.CreateEvent(ctx, arg)
+	res, err := server.store.CreateEventTx(ctx, arg)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		message, code := eventErrHandling(err, "Create event failed")
+		ctx.JSON(code, errorResponse(err, message))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, events)
+	ctx.JSON(http.StatusOK, res)
 }
 
 type getEventRequest struct {
@@ -48,68 +68,62 @@ type getEventRequest struct {
 func (server *Server) getEvent(ctx *gin.Context) {
 	var req getEventRequest
 	if err := ctx.ShouldBindUri(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		ctx.JSON(http.StatusBadRequest, errorResponse(err, errorBindUri))
 		return
 	}
 
-	q := db.New(server.db)
-	events, err := q.GetEvent(ctx, req.ID)
+	res, err := server.store.GetEventTx(ctx, req.ID)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			ctx.JSON(http.StatusNotFound, errorResponse(err))
-			return
-		}
-
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		message, code := eventErrHandling(err, "Get event failed")
+		ctx.JSON(code, errorResponse(err, message))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, events)
+	ctx.JSON(http.StatusOK, res)
 }
 
 func (server *Server) getEvents(ctx *gin.Context) {
-	q := db.New(server.db)
-	events, err := q.ListEvents(ctx)
+	res, err := server.store.GetEventsTx(ctx)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		message, code := eventErrHandling(err, "Get events failed")
+		ctx.JSON(code, errorResponse(err, message))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, events)
+	ctx.JSON(http.StatusOK, res)
 }
 
 type updateEventRequest struct {
-	ID     int32         `json:"id" binding:"required"`
-	Name   string        `json:"name" binding:"required"`
-	Venue  string        `json:"venue" binding:"required"`
-	Masjid sql.NullInt32 `json:"masjid" binding:"required"`
-	Date   time.Time     `json:"date" binding:"required"`
+	ID     int32     `json:"id" binding:"required"`
+	Name   string    `json:"name" binding:"required"`
+	Venue  string    `json:"venue" binding:"required"`
+	Masjid null.Int  `json:"masjid" binding:"required"`
+	Date   time.Time `json:"date" binding:"required"`
 }
 
 func (server *Server) updateEvent(ctx *gin.Context) {
 	var req updateEventRequest
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		ctx.JSON(http.StatusBadRequest, errorResponse(err, errorBindBody))
 		return
 	}
 
-	arg := db.UpdateEventParams{
+	arg := db.UpdateEventTxParams{
 		ID:     req.ID,
 		Name:   req.Name,
 		Venue:  req.Venue,
-		Masjid: req.Masjid,
+		Masjid: nullable.NullableToInt32(req.Masjid),
 		Date:   req.Date,
 	}
 
-	q := db.New(server.db)
-	event, err := q.UpdateEvent(ctx, arg)
+	res, err := server.store.UpdateEventTx(ctx, arg)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		message, code := eventErrHandling(err, "Update event failed")
+		ctx.JSON(code, errorResponse(err, message))
 		return
 	}
-
-	ctx.JSON(http.StatusOK, event)
+	ctx.JSON(http.StatusOK, res)
 }
 
 type deleteEventRequest struct {
@@ -119,22 +133,16 @@ type deleteEventRequest struct {
 func (server *Server) deleteEvent(ctx *gin.Context) {
 	var req deleteEventRequest
 	if err := ctx.ShouldBindUri(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		ctx.JSON(http.StatusBadRequest, errorResponse(err, errorBindUri))
 		return
 	}
 
-	q := db.New(server.db)
-	err := q.DeleteEvent(ctx, req.ID)
+	res, err := server.store.DeleteEventTx(ctx, req.ID)
 	if err != nil {
-		log.Fatal("Error when connecting to databse: ", err)
-		if err == sql.ErrNoRows {
-			ctx.JSON(http.StatusNotFound, errorResponse(err))
-			return
-		}
-
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		message, code := eventErrHandling(err, "Delete event failed")
+		ctx.JSON(code, errorResponse(err, message))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, "Success")
+	ctx.JSON(http.StatusOK, res)
 }
