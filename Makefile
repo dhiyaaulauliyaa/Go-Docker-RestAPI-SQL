@@ -10,5 +10,8 @@ db-migrate-up:
 db-migrate-down:
 	migrate -path db/migration -database "postgresql://postgres:postgres@localhost:5432/kajian?sslmode=disable" -verbose down
 
+test:
+	go test -v -cover ./...
+
 sqlc:
 	sqlc generate
