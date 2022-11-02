@@ -1,6 +1,7 @@
 package util
 
 import (
+	"fmt"
 	"math/rand"
 	"strings"
 	"time"
@@ -43,6 +44,10 @@ func randomNumber(n int) string {
 	return sb.String()
 }
 
+func RandomId() int64 {
+	return randomInt(1, 1000)
+}
+
 func RandomName() string {
 	return RandomString(6)
 }
@@ -71,4 +76,19 @@ func RandomGender() int64 {
 
 func RandomAge() int64 {
 	return randomInt(10, 80)
+}
+
+func RandomDate() time.Time {
+	year := randomInt(1900, 2022)
+	month := randomInt(1, 12)
+	date := randomInt(1, 28)
+
+	randomDate := fmt.Sprintf("%d-%d-%d", year, month, date)
+
+	time, err := time.Parse("2006-1-2", randomDate)
+	if err != nil {
+		panic(err)
+	}
+
+	return time
 }
