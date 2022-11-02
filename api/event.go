@@ -63,7 +63,7 @@ func (server *Server) createEvent(ctx *gin.Context) {
 }
 
 type getEventRequest struct {
-	ID int32 `uri:"id" binding:"required"`
+	ID int32 `uri:"id" binding:"required,min=1"`
 }
 
 func (server *Server) getEvent(ctx *gin.Context) {
@@ -77,6 +77,7 @@ func (server *Server) getEvent(ctx *gin.Context) {
 	if err != nil {
 		message, code := eventErrHandling(err, "Get event failed")
 		ctx.JSON(code, errorResponse(err, message))
+
 		return
 	}
 
