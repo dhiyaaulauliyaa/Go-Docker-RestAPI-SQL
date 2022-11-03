@@ -1,10 +1,8 @@
 package api
 
 import (
-	"fmt"
-
+	"firebase.google.com/go/auth"
 	db "github.com/dhiyaaulauliyaa/learn-go/db/sqlc"
-	"github.com/dhiyaaulauliyaa/learn-go/token"
 	"github.com/gin-gonic/gin"
 )
 
@@ -12,26 +10,19 @@ const (
 	errorBindUri  = "Param parsing failed"
 	errorBindBody = "Body parsing failed"
 	errorHashPass = "Password hashing failed"
-
-	tokenSymmetricKey   = "12345678901234567890123456789012"
-	accessTokenDuration = "15m"
 )
 
 type Server struct {
-	store      db.Store
-	router     *gin.Engine
-	tokenMaker token.Maker
+	store        db.Store
+	firebaseAuth auth.Client
+
+	router *gin.Engine
 }
 
-func NewServer(store db.Store) (*Server, error) {
-	tokenMaker, err := token.NewPasetoMaker(tokenSymmetricKey)
-	if err != nil {
-		return nil, fmt.Errorf("token maker creation failed: %w", err)
-	}
-
+func NewServer(store db.Store, firebaseAuth auth.Client) (*Server, error) {
 	server := &Server{
-		store:      store,
-		tokenMaker: tokenMaker,
+		store:        store,
+		firebaseAuth: firebaseAuth,
 	}
 
 	server.initRouter()
@@ -42,11 +33,10 @@ func NewServer(store db.Store) (*Server, error) {
 func (server *Server) initRouter() {
 	router := gin.Default()
 
-	authRoutes := router.Group("/").Use(authMiddleware(server.tokenMaker))
+	authRoutes := router.Group("/").Use(firebaseAuthMiddleware(server.firebaseAuth))
 
-	router.POST("/auth/refresh_token", server.refreshToken)
+	// router.POST("/auth/refresh_token", server.refreshToken)
 
-	router.POST("/user/login", server.userLogin)
 	router.POST("/user", server.createUser)
 	authRoutes.GET("/users", server.getUsers)
 	authRoutes.GET("/user/:phone", server.getUser)

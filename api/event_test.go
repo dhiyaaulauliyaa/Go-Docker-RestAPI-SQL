@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/dhiyaaulauliyaa/learn-go/config"
 	mockdb "github.com/dhiyaaulauliyaa/learn-go/db/mock"
 	db "github.com/dhiyaaulauliyaa/learn-go/db/sqlc"
 	"github.com/dhiyaaulauliyaa/learn-go/util"
@@ -114,7 +115,10 @@ func TestCreateEventAPI(t *testing.T) {
 				store := mockdb.NewMockStore(ctrl)
 				tc.buildStubs(store)
 
-				server, err := NewServer(store)
+				firebaseApp := config.SetupFirebase()
+				firebaseAuth := *config.SetupFirebaseAuth(firebaseApp)
+
+				server, err := NewServer(store, firebaseAuth)
 				require.NoError(t, err)
 
 				recorder := httptest.NewRecorder()
@@ -214,7 +218,10 @@ func TestGetEventAPI(t *testing.T) {
 				store := mockdb.NewMockStore(ctrl)
 				tc.buildStubs(store)
 
-				server, err := NewServer(store)
+				firebaseApp := config.SetupFirebase()
+				firebaseAuth := *config.SetupFirebaseAuth(firebaseApp)
+
+				server, err := NewServer(store, firebaseAuth)
 				require.NoError(t, err)
 
 				recorder := httptest.NewRecorder()
@@ -286,7 +293,10 @@ func TestGetEventsAPI(t *testing.T) {
 				store := mockdb.NewMockStore(ctrl)
 				tc.buildStubs(store)
 
-				server, err := NewServer(store)
+				firebaseApp := config.SetupFirebase()
+				firebaseAuth := *config.SetupFirebaseAuth(firebaseApp)
+
+				server, err := NewServer(store, firebaseAuth)
 				require.NoError(t, err)
 
 				recorder := httptest.NewRecorder()
