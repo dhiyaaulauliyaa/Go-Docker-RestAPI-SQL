@@ -64,7 +64,7 @@ func RandomUsername() string {
 func RandomPhone() string {
 	var sb strings.Builder
 
-	sb.WriteString("08")
+	sb.WriteString("628")
 	sb.WriteString(randomNumber(10))
 
 	return sb.String()
